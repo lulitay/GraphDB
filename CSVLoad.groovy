@@ -30,10 +30,21 @@ if (mgmt.getPropertyKey('myid') == null) {
 }
 mgmt.commit()
 
+// println 'creating index'
+// mgmt = graph.openManagement()
+// mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
+// mgmt.commit()
+
+// //Reindex the existing data
+// mgmt = graph.openManagement()
+// mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
+// mgmt.commit()
+
+println 'starting import'
 
 // load the data
 g = graph.traversal()
-batchSize = 10000
+batchSize = 1000
 
 // load vertices
 new File(VERTICES).eachLine {
