@@ -6,10 +6,10 @@ graph = JanusGraphFactory.open(PROPERTIES)
 // Create graph schema
 mgmt = graph.openManagement()
 if (mgmt.getPropertyKey('myid') == null) {
-    VERSION = graph.makeVertexLabel('version').make();
-    AIRPORT = graph.makeVertexLabel('airport').make();
-    COUNTRY = graph.makeVertexLabel('country').make();
-    CONTINENT = graph.makeVertexLabel('continent').make();
+    VERSION = mgmt.makeVertexLabel('version').make();
+    AIRPORT = mgmt.makeVertexLabel('airport').make();
+    COUNTRY = mgmt.makeVertexLabel('country').make();
+    CONTINENT = mgmt.makeVertexLabel('continent').make();
 
     MYID = mgmt.makePropertyKey('myid').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
     CODE = mgmt.makePropertyKey('code').dataType(String.class).cardinality(Cardinality.SINGLE).make();
@@ -23,22 +23,22 @@ if (mgmt.getPropertyKey('myid') == null) {
     LON = mgmt.makePropertyKey('lon').dataType(String.class).cardinality(Cardinality.SINGLE).make();
     DIST = mgmt.makePropertyKey('dist').dataType(String.class).cardinality(Cardinality.SINGLE).make();
 
-    ROUTE = graph.makeEdgeLabel('route').multiplicity(MULTI).make();
-    CONTAIN = graph.makeEdgeLabel('contain').multiplicity(SIMPLE).make();
+    ROUTE = mgmt.makeEdgeLabel('route').multiplicity(MULTI).make();
+    CONTAIN = mgmt.makeEdgeLabel('contain').multiplicity(SIMPLE).make();
 
     println 'created schema'
 }
 mgmt.commit()
 
-// println 'creating index'
-// mgmt = graph.openManagement()
-// mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
-// mgmt.commit()
+ //println 'creating index'
+ //mgmt = graph.openManagement()
+ //mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
+ //mgmt.commit()
 
-// //Reindex the existing data
-// mgmt = graph.openManagement()
-// mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
-// mgmt.commit()
+ //Reindex the existing data
+ //mgmt = graph.openManagement()
+ //mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
+ //mgmt.commit()
 
 println 'starting import'
 
@@ -51,37 +51,47 @@ new File(VERTICES).eachLine {
     line, linecount ->
     if (line != null && line.trim().length() > 0) {
         field = line.split(";");
-        //check = g.V().has('myid', field[0]);
-        //if(!check.hasNext() {
+
         if(field[1] == 'version') {
-            v =  graph.addVertex('version');
-            v.property('myid', field[0]);
-            v.property('code', field[2]);
-            v.property('desc', field[5]);
+            check = g.V().has('myid', field[0]);
+            if(!check.hasNext()) {
+                v =  graph.addVertex('version');
+                v.property('myid', field[0]);
+                v.property('code', field[2]);
+                v.property('desc', field[5]);
+            }
         } else if(field[1] == 'airport') {
-            v = graph.addVertex('airport');
-            v.property('myid', field[0]);
-            v.property('code', field[2]);
-            v.property('icao', field[3]);
-            v.property('city', field[4]);
-            v.property('desc', field[5]);
-            v.property('runways', field[6]);
-            v.property('longest', field[7]);
-            v.property('elev', field[8]);
-            v.property('lat', field[9]);
-            v.property('lon', field[10]);
+            check = g.V().has('myid', field[0]);
+            if(!check.hasNext()) {
+                v = graph.addVertex('airport');
+                v.property('myid', field[0]);
+                v.property('code', field[2]);
+                v.property('icao', field[3]);
+                v.property('city', field[4]);
+                v.property('desc', field[5]);
+                v.property('runways', field[6]);
+                v.property('longest', field[7]);
+                v.property('elev', field[8]);
+                v.property('lat', field[9]);
+                v.property('lon', field[10]);
+            }
         } else if(field[1] == 'country') {
-            v = graph.addVertex('country');
-            v.property('myid', field[0]);
-            v.property('code', field[2]);
-            v.property('desc', field[5]);
+            check = g.V().has('myid', field[0]);
+            if(!check.hasNext()) {
+                v = graph.addVertex('country');
+                v.property('myid', field[0]);
+                v.property('code', field[2]);
+                v.property('desc', field[5]);
+            }
         } else if(field[1] == 'continent') {
-            v = graph.addVertex('continent');
-            v.property('myid', field[0]);
-            v.property('code', field[2]);
-            v.property('desc', field[5]);
+            check = g.V().has('myid', field[0]);
+            if(!check.hasNext()) {
+                v = graph.addVertex('continent');
+                v.property('myid', field[0]);
+                v.property('code', field[2]);
+                v.property('desc', field[5]);
+            }
         }
-        //}
 
         if (linecount % batchSize == 0) {
             graph.tx().commit()
@@ -90,6 +100,7 @@ new File(VERTICES).eachLine {
     }
 }
 
+graph.tx().commit()
 println 'added vertices'
 
 // load edges
@@ -99,16 +110,22 @@ new File(EDGES).eachLine {
         field = line.split(";");
 
         if(field[3] == 'route') {
-            src = g.V().has('myid', field[0]).next();
-            dst = g.V().has('myid', field[1]).next();
-            e = src.addEdge('route', dst);
-            e.property('myid', field[2]);
-            e.property('dist', field[4]);
+            check = g.E().has('myid', field[2]);
+            if(!check.hasNext()) {
+                src = g.V().has('myid', field[0]).next();
+                dst = g.V().has('myid', field[1]).next();
+                e = src.addEdge('route', dst);
+                e.property('myid', field[2]);
+                e.property('dist', field[4]);
+            }
         } else if(field[3] == 'contain') {
-            src = g.V().has('myid', field[0]).next();
-            dst = g.V().has('myid', field[1]).next();
-            e = src.addEdge('contain', dst);
-            e.property('myid', field[2]);
+            check = g.E().has('myid', field[2]);
+            if(!check.hasNext()) {
+                src = g.V().has('myid', field[0]).next();
+                dst = g.V().has('myid', field[1]).next();
+                e = src.addEdge('contain', dst);
+                e.property('myid', field[2]);
+            }
         }
 
         if(linecount % batchSize == 0) {
