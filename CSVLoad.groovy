@@ -118,7 +118,7 @@ new File(EDGES).eachLine {
                 e.property('myid', field[2]);
                 e.property('dist', field[4]);
             }
-        } else if(field[3] == 'contain') {
+        } else if(field[3] == 'contains') {
             check = g.E().has('myid', field[2]);
             if(!check.hasNext()) {
                 src = g.V().has('myid', field[0]).next();
