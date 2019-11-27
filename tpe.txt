@@ -1,0 +1,209 @@
+//Eliminar el graph
+graph.close()
+:q
+janusgraph.sh stop
+janusgraph.sh clear
+
+
+//map of continents and amount of airports - type airport y continent - desc
+graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('continent').groupCount().by('desc').unfold() - 0.04499681
+0.04678027
+0.01834796
+0.01605782
+0.02172141
+0.019942389999999997
+
+
+//list of airports ordered by runways(size) - type airport - runways y desc
+graph.traversal().V().hasLabel('airport').order().by('runways', desc).values('desc') - 0.03134009
+0.028281799999999996
+0.02344712
+0.10382024
+0.08973898
+0.040845269999999996
+
+
+//list of countries with more than 100 airports - mixed country
+graph.traversal().V().hasLabel('country').where(out().count().is(gt(100))).values('desc') - 0.05391046
+0.04949202
+0.03467222
+0.03965601
+0.02635899
+0.04087833
+
+
+//list of international airports ordered by most routes - mixed desc
+graph.traversal().V().hasLabel('airport').has('desc', containing('International')).order().by(bothE().hasLabel('route').count(), desc).values('desc') - 0.11976248
+0.03281957
+0.02555652
+0.020679379999999997
+0.018768209999999997
+0.0217691
+
+
+//list of nodes without edges - composite desc
+graph.traversal().V().not(bothE()).values('desc') - 0.02970141
+0.01461873
+0.00891397
+0.012440469999999999
+0.01200999
+0.00820954
+
+
+//list of airports which code starts with 'L'
+graph.traversal().V().hasLabel('airport').has('code', startingWith('L')).values('desc') - 0.07703937
+0.01494627
+0.009510939999999999
+0.00961478
+0.00906589
+0.09640504999999999
+
+
+//list of properties for Ezeiza
+graph.traversal().V().has('code', 'EZE').valueMap().unfold() - 0.02604202
+0.052228750000000004
+0.06575698999999999
+0.04228079999999999
+0.03020999
+0.03909791
+
+
+//airport with the most routes
+graph.traversal().V().hasLabel('airport').order().by(bothE('route').count(), desc).values('desc').limit(1) - 0.0478992
+0.08115784999999999
+0.07223626999999999
+0.060038299999999996
+0.03832559
+0.027880749999999996
+
+
+//classifies airports according to the number of outgoing routes as 'busy' or 'not busy'
+graph.traversal().V().hasLabel('airport').sample(10).as('airport').choose(out('route').count().is(gt(20)), constant('busy'), constant('not busy')).as('rank').select('airport', 'rank').by('desc').by() - 0.12276679
+0.08940617999999999
+0.09269332999999999
+0.06721447
+0.19977244
+0.11147618
+
+//
+graph.traversal().V().hasLabel('country').has('desc', 'Argentina').out().outE().otherV().values('city').dedup().order()
+0.11039726999999999
+0.07835363999999999 
+0.04266935
+0.060922399999999995
+0.03224121
+
+
+1 composite simple desc
+mgmt = graph.openManagement()
+mgmt.buildIndex('descComposite', Vertex.class).addKey(mgmt.getPropertyKey('desc')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'descComposite').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("descComposite"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().has('desc', 'Argentina').values('desc')
+0.2821
+CON
+0.02621919
+
+2 composite simple runways
+mgmt = graph.openManagement()
+mgmt.buildIndex('runwaysComposite', Vertex.class).addKey(mgmt.getPropertyKey('runways')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysComposite').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("runwaysComposite"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().has('runways', 5).values('desc')
+0.1195
+CON
+0.019974659999999998
+
+3 composite restringido
+mgmt = graph.openManagement()
+mgmt.buildIndex('countryDescComposite', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('country')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'countryDescComposite').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex('countryDescComposite'), SchemaAction.REINDEX).get()
+mgmt.commit()
+FALTA QUERY
+0.047526979999999996
+CON
+0.00817723
+
+
+4 composite doble - lat y lon
+Primero se crean los indices por separado
+mgmt = graph.openManagement()
+mgmt.buildIndex('latlonComposite', Vertex.class).addKey(mgmt.getPropertyKey('lat')).addKey(mgmt.getPropertyKey('lon')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'latlonComposite').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("latlonComposite"), SchemaAction.REINDEX).get()
+graph.traversal().V().has('lat', '-348.222').has('lon', '-585.358').values('code', 'desc')
+0.16451654
+0.05316186
+0.04904 (No vemos que mejore mucho)
+
+5 composite triple
+6 composite triple
+7 composite triple
+
+8 mixed full text
+mgmt = graph.openManagement()
+mgmt.buildIndex('descMixed2', Vertex.class).addKey(mgmt.getPropertyKey('desc')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'descMixed2').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("descMixed2"), SchemaAction.REINDEX).get()
+graph.traversal().V().has('desc', textContainsPrefix('Ar')).values('desc')
+0.009696159999999999
+CON
+0.01014597 (con el indice tarda mas, incluso lo probamos en distintas computadoras)
+
+
+9 mixed full text
+graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('C')).has('code', textContainsPrefix('C')).has('desc', textContainsPrefix('C')).values('desc','city','code')
+
+10 mixed rango
+mgmt = graph.openManagement()
+mgmt.buildIndex('runwaysMixed', Vertex.class).addKey(mgmt.getPropertyKey('runways')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysMixed').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("runwaysMixed"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().has('runways', gt(5)).values('desc','runways')
+0.0356548
+CON
+0.01858632
+
+11 mixed rango
+graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[z,Z].*')).has('elev', inside(1000,2000)).values('desc','city','elev')
+
+
+12 mixed string 
+mgmt = graph.openManagement()
+mgmt.buildIndex('cityString', Vertex.class).addKey(mgmt.getPropertyKey('city'), Mapping.STRING.asParameter()).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'cityString').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("cityString"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().has('city', textFuzzy('Buenoz Airez')).values('desc','city')
+0.03445077
+CON
+0.01538092
+
+
+13 mixed fulltext + string 
+graph.traversal().V().has('elev', gte(100)).has('runways', inside(5,7)).values('code','elev','runways')
+
+
+14 mixed fulltext + fulltext + rango
+graph.traversal().V().order().by('runways').limit(10).values('desc','runways')
+
+15 mixed edge
+graph.traversal().E().has('dist', lte(400)).order().by('dist', desc).values('dist')
