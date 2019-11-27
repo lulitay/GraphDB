@@ -148,6 +148,18 @@ graph.traversal().V().has('lat', '-348.222').has('lon', '-585.358').values('code
 0.04904 (No vemos que mejore mucho)
 
 5 composite triple
+mgmt = graph.openManagement()
+mgmt.buildIndex('descCompositeCons', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('continent')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'descCompositeCons').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("descCompositeCons"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('continent').groupCount().by('desc').unfold()
+0.01816174
+CON
+0.01281093 (se itera por todos los airports y de todas maneras parece que el tiempo mejoro)
+
 6 composite triple
 7 composite triple
 
@@ -223,15 +235,16 @@ CON
 
 13 mixed fulltext + string 
 graph.traversal().V().has('elev', gte(100)).has('runways', inside(5,7)).values('code','elev','runways')
+MARCA COMO SI YA ESTUVIESEN LOS INDICES
 
 
 14 mixed fulltext + fulltext + rango
 mgmt = graph.openManagement()
-mgmt.buildIndex('runwaysComposite', Vertex.class).addKey(mgmt.getPropertyKey('runways')).buildCompositeIndex()
+mgmt.buildIndex('runwaysMixedConst', Vertex.class).addKey(mgmt.getPropertyKey('runways')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
 mgmt.commit()
-ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysComposite').call()
+ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysMixedConst2').call()
 mgmt = graph.openManagement()
-mgmt.updateIndex(mgmt.getGraphIndex("runwaysComposite"), SchemaAction.REINDEX).get()
+mgmt.updateIndex(mgmt.getGraphIndex("runwaysMixedConst2"), SchemaAction.REINDEX).get()
 mgmt.commit()
 graph.traversal().V().order().by('runways').limit(10).values('desc','runways')
 0.02217111
