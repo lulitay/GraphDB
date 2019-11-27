@@ -4,7 +4,7 @@ PROPERTIES = args[2]
 graph = JanusGraphFactory.open(PROPERTIES)
 
 // Create graph schema
-mgmt = graph.openManagement()
+ mgmt = graph.openManagement()
 if (mgmt.getPropertyKey('myid') == null) {
     VERSION = mgmt.makeVertexLabel('version').make();
     AIRPORT = mgmt.makeVertexLabel('airport').make();
@@ -16,12 +16,12 @@ if (mgmt.getPropertyKey('myid') == null) {
     DESC = mgmt.makePropertyKey('desc').dataType(String.class).cardinality(Cardinality.SINGLE).make();
     LONGEST = mgmt.makePropertyKey('longest').dataType(String.class).cardinality(Cardinality.SINGLE).make();
     CITY = mgmt.makePropertyKey('city').dataType(String.class).cardinality(Cardinality.SINGLE).make();
-    ELEV = mgmt.makePropertyKey('elev').dataType(String.class).cardinality(Cardinality.SINGLE).make();
+    ELEV = mgmt.makePropertyKey('elev').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
     ICAO = mgmt.makePropertyKey('icao').dataType(String.class).cardinality(Cardinality.SINGLE).make();
-    RUNWAYS = mgmt.makePropertyKey('runways').dataType(String.class).cardinality(Cardinality.SINGLE).make();
+    RUNWAYS = mgmt.makePropertyKey('runways').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
     LAT = mgmt.makePropertyKey('lat').dataType(String.class).cardinality(Cardinality.SINGLE).make();
     LON = mgmt.makePropertyKey('lon').dataType(String.class).cardinality(Cardinality.SINGLE).make();
-    DIST = mgmt.makePropertyKey('dist').dataType(String.class).cardinality(Cardinality.SINGLE).make();
+    DIST = mgmt.makePropertyKey('dist').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
 
     ROUTE = mgmt.makeEdgeLabel('route').multiplicity(MULTI).make();
     CONTAIN = mgmt.makeEdgeLabel('contain').multiplicity(SIMPLE).make();
@@ -30,15 +30,27 @@ if (mgmt.getPropertyKey('myid') == null) {
 }
 mgmt.commit()
 
- //println 'creating index'
- //mgmt = graph.openManagement()
- //mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
- //mgmt.commit()
+println 'creating index'
+graph.tx().rollback()
+ mgmt = graph.openManagement()
+ mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
+ mgmt.commit()
 
  //Reindex the existing data
- //mgmt = graph.openManagement()
- //mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
- //mgmt.commit()
+ ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndex').call()
+ mgmt = graph.openManagement()
+ mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
+ mgmt.commit()
+
+graph.tx().rollback()
+ mgmt = graph.openManagement()
+ mgmt.buildIndex('myidIndexEdge', Edge.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
+ mgmt.commit()
+
+ ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndexEdge').call()
+ mgmt = graph.openManagement()
+ mgmt.updateIndex(mgmt.getGraphIndex("myidIndexEdge"), SchemaAction.REINDEX).get()
+ mgmt.commit()
 
 println 'starting import'
 
