@@ -160,6 +160,19 @@ graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('continent').g
 CON
 0.01281093 (se itera por todos los airports y de todas maneras parece que el tiempo mejoro)
 6 composite triple
+mgmt = graph.openManagement()
+mgmt.buildIndex('descMixedCons', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'descMixedCons').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("descMixedCons"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().hasLabel('airport').has('desc', containing('International')).order().by(bothE().hasLabel('route').count()).values('desc')
+0.02868047
+CON
+0.0146668
+
+
 7 composite triple
 
 8 mixed full text
