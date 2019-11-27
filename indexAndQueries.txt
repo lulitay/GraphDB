@@ -1,0 +1,147 @@
+//Eliminar el graph
+graph.close()
+:q
+janusgraph.sh stop
+janusgraph.sh clear
+
+//NOTA: el orden no se corresponde con el orden en el informe
+
+//1. composite simple desc
+mgmt = graph.openManagement()
+mgmt.buildIndex('descComposite', Vertex.class).addKey(mgmt.getPropertyKey('desc')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'descComposite').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("descComposite"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().has('desc', 'Argentina').values('desc')
+
+//2. composite simple runways
+mgmt = graph.openManagement()
+mgmt.buildIndex('runwaysComposite', Vertex.class).addKey(mgmt.getPropertyKey('runways')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysComposite').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("runwaysComposite"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().has('runways', 5).values('desc')
+
+//3. composite restringido
+mgmt = graph.openManagement()
+mgmt.buildIndex('countryDescComposite', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('country')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'countryDescComposite').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex('countryDescComposite'), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().hasLabel('country').has('desc', 'Argentina').values('desc')
+
+//4. composite doble - lat y lon
+//Primero se crean los indices por separado
+mgmt = graph.openManagement()
+mgmt.buildIndex('latlonComposite', Vertex.class).addKey(mgmt.getPropertyKey('lat')).addKey(mgmt.getPropertyKey('lon')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'latlonComposite').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("latlonComposite"), SchemaAction.REINDEX).get()
+graph.traversal().V().has('lat', '-348.222').has('lon', '-585.358').values('code', 'desc')
+
+//5. composite triple
+mgmt = graph.openManagement()
+mgmt.buildIndex('descCompositeCons', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('continent')).buildCompositeIndex()
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'descCompositeCons').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("descCompositeCons"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('continent').groupCount().by('desc').unfold()
+
+//6. composite triple
+mgmt = graph.openManagement()
+mgmt.buildIndex('descMixedCons', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'descMixedCons').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("descMixedCons"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().hasLabel('airport').has('desc', containing('International')).order().by(bothE().hasLabel('route').count()).values('desc')
+
+//7. mixed full text
+mgmt = graph.openManagement()
+mgmt.buildIndex('descMixed2', Vertex.class).addKey(mgmt.getPropertyKey('desc')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'descMixed2').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("descMixed2"), SchemaAction.REINDEX).get()
+graph.traversal().V().has('desc', textContainsPrefix('Ar')).values('desc')
+
+//8. mixed full text
+mgmt = graph.openManagement()
+mgmt.buildIndex('tripleMixCons2', Vertex.class).addKey(mgmt.getPropertyKey('city')).addKey(mgmt.getPropertyKey('code')).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'tripleMixCons2').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("tripleMixCons2"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('C')).has('code', textContainsPrefix('C')).has('desc', textContainsPrefix('C')).values('desc','city','code')
+
+//9. mixed rango
+mgmt = graph.openManagement()
+mgmt.buildIndex('runwaysMixed', Vertex.class).addKey(mgmt.getPropertyKey('runways')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysMixed').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("runwaysMixed"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().has('runways', gt(5)).values('desc','runways')
+
+//10. mixed rango
+mgmt = graph.openManagement()
+mgmt.buildIndex('cityElevConstrain', Vertex.class).addKey(mgmt.getPropertyKey('city')).addKey(mgmt.getPropertyKey('elev')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'cityElevConstrain').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("cityElevConstrain"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[z,Z].*')).has('elev', inside(1000,2000)).values('desc','city','elev')
+
+//11. mixed string 
+mgmt = graph.openManagement()
+mgmt.buildIndex('cityString', Vertex.class).addKey(mgmt.getPropertyKey('city'), Mapping.STRING.asParameter()).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'cityString').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("cityString"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().has('city', textFuzzy('Buenoz Airez')).values('desc','city')
+
+//12. mixed fulltext + string 
+graph.traversal().V().has('elev', gte(100)).has('runways', inside(5,7)).has('longest', lt(14000)).values('code','elev','runways','longest')
+
+A pesar de no tener todos los indices que creeriamos necesarios para que la query funcione de forma optima, creemos que por el orden en que se hacen los filtros
+la solucion no itera por muchos nodos y eso hace que el warning de utilizar indices no aparezca
+Ademas, longest en nuestro graph es un String y se esta tratando como un integer sin hacer ningun tipo de conversion manual
+
+//13. mixed fulltext + fulltext + rango
+graph.traversal().V().order().by('runways').limit(10).values('desc','runways')
+mgmt = graph.openManagement()
+mgmt.buildIndex('runwaysMixedConst', Vertex.class).addKey(mgmt.getPropertyKey('runways')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysMixedConst2').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("runwaysMixedConst2"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().V().order().by('runways').limit(10).values('desc','runways')
+
+Para esta query no logramos optimizar de ninguna manera con indices, intamos usar mixed, composite, y restringirlo para los aeropuertos, pero siempre necesita iterar por todos los nodos
+incluso sabiendo que tiene que mostrar unicamente los 10 primeros
+
+//14. mixed edge
+mgmt = graph.openManagement()
+mgmt.buildIndex('distEdge2', Edge.class).addKey(mgmt.getPropertyKey('dist')).buildMixedIndex("search")
+mgmt.commit()
+ManagementSystem.awaitGraphIndexStatus(graph, 'distEdge2').call()
+mgmt = graph.openManagement()
+mgmt.updateIndex(mgmt.getGraphIndex("distEdge2"), SchemaAction.REINDEX).get()
+mgmt.commit()
+graph.traversal().E().has('dist', lte(400)).order().by('dist', desc).values('dist')
