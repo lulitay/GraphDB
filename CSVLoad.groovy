@@ -14,13 +14,13 @@ if (mgmt.getPropertyKey('myid') == null) {
     MYID = mgmt.makePropertyKey('myid').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
     CODE = mgmt.makePropertyKey('code').dataType(String.class).cardinality(Cardinality.SINGLE).make();
     DESC = mgmt.makePropertyKey('desc').dataType(String.class).cardinality(Cardinality.SINGLE).make();
-    LONGEST = mgmt.makePropertyKey('longest').dataType(String.class).cardinality(Cardinality.SINGLE).make();
+    LONGEST = mgmt.makePropertyKey('longest').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
     CITY = mgmt.makePropertyKey('city').dataType(String.class).cardinality(Cardinality.SINGLE).make();
     ELEV = mgmt.makePropertyKey('elev').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
     ICAO = mgmt.makePropertyKey('icao').dataType(String.class).cardinality(Cardinality.SINGLE).make();
     RUNWAYS = mgmt.makePropertyKey('runways').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
-    LAT = mgmt.makePropertyKey('lat').dataType(String.class).cardinality(Cardinality.SINGLE).make();
-    LON = mgmt.makePropertyKey('lon').dataType(String.class).cardinality(Cardinality.SINGLE).make();
+    LAT = mgmt.makePropertyKey('lat').dataType(Double.class).cardinality(Cardinality.SINGLE).make();
+    LON = mgmt.makePropertyKey('lon').dataType(Double.class).cardinality(Cardinality.SINGLE).make();
     DIST = mgmt.makePropertyKey('dist').dataType(Integer.class).cardinality(Cardinality.SINGLE).make();
 
     ROUTE = mgmt.makeEdgeLabel('route').multiplicity(MULTI).make();
@@ -30,27 +30,27 @@ if (mgmt.getPropertyKey('myid') == null) {
 }
 mgmt.commit()
 
-println 'creating index'
-graph.tx().rollback()
- mgmt = graph.openManagement()
- mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
- mgmt.commit()
+//println 'creating index'
+//graph.tx().rollback()
+ //mgmt = graph.openManagement()
+ //mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
+ //mgmt.commit()
 
  //Reindex the existing data
- ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndex').call()
- mgmt = graph.openManagement()
- mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
- mgmt.commit()
+ //ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndex').call()
+ //mgmt = graph.openManagement()
+ //mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
+ //mgmt.commit()
 
-graph.tx().rollback()
- mgmt = graph.openManagement()
- mgmt.buildIndex('myidIndexEdge', Edge.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
- mgmt.commit()
+//graph.tx().rollback()
+ //mgmt = graph.openManagement()
+ //mgmt.buildIndex('myidIndexEdge', Edge.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
+ //mgmt.commit()
 
- ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndexEdge').call()
- mgmt = graph.openManagement()
- mgmt.updateIndex(mgmt.getGraphIndex("myidIndexEdge"), SchemaAction.REINDEX).get()
- mgmt.commit()
+ //ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndexEdge').call()
+ //mgmt = graph.openManagement()
+ //mgmt.updateIndex(mgmt.getGraphIndex("myidIndexEdge"), SchemaAction.REINDEX).get()
+ //mgmt.commit()
 
 println 'starting import'
 
@@ -63,6 +63,7 @@ new File(VERTICES).eachLine {
     line, linecount ->
     if (line != null && line.trim().length() > 0) {
         field = line.split(";");
+        println field[0]
 
         if(field[1] == 'version') {
             check = g.V().has('myid', field[0]);
