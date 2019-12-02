@@ -30,27 +30,27 @@ if (mgmt.getPropertyKey('myid') == null) {
 }
 mgmt.commit()
 
-//println 'creating index'
-//graph.tx().rollback()
- //mgmt = graph.openManagement()
- //mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
- //mgmt.commit()
+println 'creating index'
+graph.tx().rollback()
+ mgmt = graph.openManagement()
+ mgmt.buildIndex('myidIndex', Vertex.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
+ mgmt.commit()
 
  //Reindex the existing data
- //ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndex').call()
- //mgmt = graph.openManagement()
- //mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
- //mgmt.commit()
+ ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndex').call()
+ mgmt = graph.openManagement()
+ mgmt.updateIndex(mgmt.getGraphIndex("myidIndex"), SchemaAction.REINDEX).get()
+ mgmt.commit()
 
-//graph.tx().rollback()
- //mgmt = graph.openManagement()
- //mgmt.buildIndex('myidIndexEdge', Edge.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
- //mgmt.commit()
+graph.tx().rollback()
+ mgmt = graph.openManagement()
+ mgmt.buildIndex('myidIndexEdge', Edge.class).addKey(mgmt.getPropertyKey('myid')).buildCompositeIndex()
+ mgmt.commit()
 
- //ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndexEdge').call()
- //mgmt = graph.openManagement()
- //mgmt.updateIndex(mgmt.getGraphIndex("myidIndexEdge"), SchemaAction.REINDEX).get()
- //mgmt.commit()
+ ManagementSystem.awaitGraphIndexStatus(graph, 'myidIndexEdge').call()
+ mgmt = graph.openManagement()
+ mgmt.updateIndex(mgmt.getGraphIndex("myidIndexEdge"), SchemaAction.REINDEX).get()
+ mgmt.commit()
 
 println 'starting import'
 
@@ -63,7 +63,6 @@ new File(VERTICES).eachLine {
     line, linecount ->
     if (line != null && line.trim().length() > 0) {
         field = line.split(";");
-        println field[0]
 
         if(field[1] == 'version') {
             check = g.V().has('myid', field[0]);
