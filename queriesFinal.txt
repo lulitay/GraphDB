@@ -2,4 +2,142 @@ graph = JanusGraphFactory.open('./conf/janusgraph-cassandra.properties')
 
 1.
 graph.traversal().V().has('desc', 'Argentina').values('desc')
-0.08534915
+SIN - 0.08534915
+CON - 0.04843007
+graph.traversal().V().has('desc', 'Zambia').values('desc')
+SIN - 0.05809201
+CON - 0.04442146
+graph.traversal().V().has('desc', 'Xer').values('desc')
+SIN - 0.06631646
+CON - 0.02926599
+
+2.
+graph.traversal().V().has('runways', 5).values('desc')
+SIN - 
+graph.traversal().V().has('runways', 1).values('desc')
+DOS IMAGENES PROFILER
+SIN - 0.026745
+graph.traversal().V().has('runways', 10).values('desc')
+SIN - 0.033026
+
+3.
+graph.traversal().V().hasLabel('country').has('desc', 'Argentina').values('desc')
+graph.traversal().V().has('desc', 'Argentina').hasLabel('country').values('desc')
+graph.traversal().V().hasLabel('country').has('desc', 'zzz').values('desc') - 0.034912
+graph.traversal().V().has('desc', 'zzz').hasLabel('country').values('desc')
+
+4.
+graph.traversal().V().has('lat', '-34.8222').has('lon', '-58.5358').values('code', 'desc')
+graph.traversal().V().has('lat', '0').has('lon', '0').values('code', 'desc') - 0.027219
+PRIMERO 1 screen con cada uno sin indice
+
+5.
+graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('continent').groupCount().by('desc').unfold()
+graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('country').groupCount().by('desc').unfold() - 0.053212999999999996
+Me queda la duda de si esta usando o no el indice. No logro ver el inicio del profile
+
+6.
+graph.traversal().V().hasLabel('airport').has('desc', containing('International')).order().by(bothE().hasLabel('route').count()).values('desc')
+2 screens para esta query (orden al reves)
+graph.traversal().V().hasLabel('airport').has('desc', containing('a')).order().by(bothE().hasLabel('route').count()).values('desc') - 0.070688
+1 screen, no llego a ver el inicio
+graph.traversal().V().hasLabel('airport').has('desc', containing('zzz')).order().by(bothE().hasLabel('route').count()).values('desc') - 0.065369
+
+7.
+graph.traversal().V().has('desc', textContainsPrefix('Ar')).values('desc')
+2 screens sin indice
+2 screens con indice
+graph.traversal().V().has('desc', textContainsPrefix('zzz')).values('desc') - 0.029521
+1 screen con indice (no esta)
+graph.traversal().V().has('desc', textContainsPrefix('Bel')).values('desc')
+1 screen con indice
+
+8.
+graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('C')).has('code', textContainsPrefix('C')).has('desc', textContainsPrefix('C')).values('desc','city','code')
+2 screens con indice
+graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('R')).has('code', textContainsPrefix('G')).has('desc', textContainsPrefix('B')).values('desc','city','code')
+1 screen con indice
+graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('R')).has('code', textContainsPrefix('B')).has('desc', textContainsPrefix('B')).values('desc','city','code')
+1 screen con indice
+
+9.
+graph.traversal().V().has('runways', gt(5)).values('desc','runways')
+2 con indice
+graph.traversal().V().has('runways', gt(1)).values('desc','runways') - 0.121214
+2 con indice
+graph.traversal().V().has('runways', gt(10)).values('desc','runways') - 0.064097
+1 con indice
+
+10.
+graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[z,Z].*')).has('elev', inside(1000,2000)).values('desc','city','elev')
+2 con indice
+graph.traversal().V().has('city', textContainsRegex('.*[z,Z].*')).has('elev', inside(1000,2000)).hasLabel('airport').values('desc','city','elev')
+2 con indice
+graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[!].*')).has('elev', inside(1000,2000)).values('desc','city','elev') - 0.076398
+1 con indice
+graph.traversal().V().has('city', textContainsRegex('.*[!].*')).has('elev', inside(1000,2000)).hasLabel('airport').values('desc','city','elev')
+1 con indice
+graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[g,G].*')).has('elev', inside(1000,2000)).values('desc','city','elev')
+2 con indice
+
+11.
+graph.traversal().V().has('city', textFuzzy('Buenoz Airez')).values('desc','city')
+1 con indice
+graph.traversal().V().has('city', textFuzzy('landon')).values('desc','city')
+2 con indice
+graph.traversal().V().has('city', textFuzzy('zzz')).values('desc','city') - 0.038549
+1 con
+
+12.
+graph.traversal().V().has('elev', gte(100)).has('runways', inside(5,7)).has('longest', lt(14000)).values('code','elev','runways','longest')
+1 con indice runwaysmixed
+graph.traversal().V().has('longest', lt(14000)).has('elev', gte(100)).has('runways', inside(5,7)).values('code','elev','runways','longest')
+1 con indice runwaysmixed
+graph.traversal().V().has('longest', lt(14000)).has('elev', gte(100)).has('runways', inside(1,7)).values('code','elev','runways','longest')
+2 cn indice runwaysmixed - cambia mucho el tiempo que tarda a pesar de que use ee indice y no cambia el indice a medid que cambio el orden de la query
+
+13.
+graph.traversal().V().order().by('runways').limit(10).values('desc','runways')
+1 sin indice, no se como hace4r para que lo use
+
+14. 
+graph.traversal().E().has('dist', lte(400)).order().by('dist', desc).values('dist')
+1 con indice
+graph.traversal().E().has('dist', lte(0)).order().by('dist', desc).values('dist') - 0.06694
+1 con indice
+
+15.
+nada
+
+16.
+graph.traversal().V().has('city', 'New York').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc')
+1 con indice
+graph.traversal().V().has('city', 'zzz').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc') - 0.054817
+1 con indice
+graph.traversal().V().has('city', 'Buenos Aires').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc') - 0.054817
+1 con indice
+
+17 geo luli
+
+18
+graph.traversal().V().or(has('city', textFuzzy('Landon')), has('desc', textContainsPrefix('London'))).values('city','desc')
+2 con indice sobre description mixed
+graph.traversal().V().or(has('desc', textContainsPrefix('London')), has('city', textFuzzy('Landon'))).values('city','desc')
+2 con indice sobre city
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
