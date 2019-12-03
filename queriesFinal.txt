@@ -1,0 +1,5 @@
+graph = JanusGraphFactory.open('./conf/janusgraph-cassandra.properties')
+
+1.
+graph.traversal().V().has('desc', 'Argentina').values('desc')
+0.08534915

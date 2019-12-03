@@ -134,7 +134,7 @@ CON
 0.00817723
 
 
-4 composite doble - lat y lon
+4 composite doble - lat y lon (ANALIZAR CON EL PROFILER)
 Primero se crean los indices por separado
 mgmt = graph.openManagement()
 mgmt.buildIndex('latlonComposite', Vertex.class).addKey(mgmt.getPropertyKey('lat')).addKey(mgmt.getPropertyKey('lon')).buildCompositeIndex()
