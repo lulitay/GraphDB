@@ -174,7 +174,7 @@ mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("cityComposite"), SchemaAction.REINDEX).get()
 mgmt.commit()
 graph.traversal().V().has('city', 'New York').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc')
-g.traversal().V().has('city', 'zzz').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc') - 0.054817
+graph.traversal().V().has('city', 'zzz').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc') - 0.054817
 
 //17. geo
 mgmt = graph.openManagement()
