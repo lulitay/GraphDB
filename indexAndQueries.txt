@@ -4,9 +4,9 @@ graph.close()
 janusgraph.sh stop
 janusgraph.sh clean
 
-//NOTA: el orden no se corresponde con el orden en el informe
+== INDICES ==
 
-//1. composite simple desc
+//1. descComposite
 mgmt = graph.openManagement()
 mgmt.buildIndex('descComposite', Vertex.class).addKey(mgmt.getPropertyKey('desc')).buildCompositeIndex()
 mgmt.commit()
@@ -14,10 +14,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'descComposite').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("descComposite"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().has('desc', 'Argentina').values('desc')
-graph.traversal().V().has('desc', 'zzz').values('desc') - 0.039615
 
-//2. composite simple runways
+//2. runwaysComposite
 mgmt = graph.openManagement()
 mgmt.buildIndex('runwaysComposite', Vertex.class).addKey(mgmt.getPropertyKey('runways')).buildCompositeIndex()
 mgmt.commit()
@@ -25,11 +23,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysComposite').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("runwaysComposite"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().has('runways', 5).values('desc')
-graph.traversal().V().has('runways', 1).values('desc') - 0.026745
-graph.traversal().V().has('runways', 10).values('desc') - 0.033026
 
-//3. composite restringido
+//3. countryDescComposite
 mgmt = graph.openManagement()
 mgmt.buildIndex('countryDescComposite', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('country')).buildCompositeIndex()
 mgmt.commit()
@@ -37,10 +32,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'countryDescComposite').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex('countryDescComposite'), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().hasLabel('country').has('desc', 'Argentina').values('desc')
-graph.traversal().V().hasLabel('country').has('desc', 'zzz').values('desc') - 0.034912
 
-//4. composite doble - lat y lon
+//4. latlonComposite
 //Primero se crean los indices por separado
 mgmt = graph.openManagement()
 mgmt.buildIndex('latlonComposite', Vertex.class).addKey(mgmt.getPropertyKey('lat')).addKey(mgmt.getPropertyKey('lon')).buildCompositeIndex()
@@ -48,10 +41,9 @@ mgmt.commit()
 ManagementSystem.awaitGraphIndexStatus(graph, 'latlonComposite').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("latlonComposite"), SchemaAction.REINDEX).get()
-graph.traversal().V().has('lat', '-34.8222').has('lon', '-58.5358').values('code', 'desc')
-graph.traversal().V().has('lat', '0').has('lon', '0').values('code', 'desc') - 0.027219
+mgmt.commit()
 
-//5. composite triple
+//5. descCompositeCons
 mgmt = graph.openManagement()
 mgmt.buildIndex('descCompositeCons', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('continent')).buildCompositeIndex()
 mgmt.commit()
@@ -59,10 +51,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'descCompositeCons').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("descCompositeCons"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('continent').groupCount().by('desc').unfold()
-graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('country').groupCount().by('desc').unfold() - 0.053212999999999996
 
-//6. composite triple
+//6. descMixedCons
 mgmt = graph.openManagement()
 mgmt.buildIndex('descMixedCons', Vertex.class).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
 mgmt.commit()
@@ -70,21 +60,17 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'descMixedCons').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("descMixedCons"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().hasLabel('airport').has('desc', containing('International')).order().by(bothE().hasLabel('route').count()).values('desc')
-graph.traversal().V().hasLabel('airport').has('desc', containing('a')).order().by(bothE().hasLabel('route').count()).values('desc') - 0.070688
-graph.traversal().V().hasLabel('airport').has('desc', containing('zzz')).order().by(bothE().hasLabel('route').count()).values('desc') - 0.065369
 
-//7. mixed full text
+//7. descMixed2
 mgmt = graph.openManagement()
 mgmt.buildIndex('descMixed2', Vertex.class).addKey(mgmt.getPropertyKey('desc')).buildMixedIndex("search")
 mgmt.commit()
 ManagementSystem.awaitGraphIndexStatus(graph, 'descMixed2').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("descMixed2"), SchemaAction.REINDEX).get()
-graph.traversal().V().has('desc', textContainsPrefix('Ar')).values('desc')
-graph.traversal().V().has('desc', textContainsPrefix('zzz')).values('desc') - 0.029521
+mgmt.commit()
 
-//8. mixed full text
+//8. tripleMixCons2
 mgmt = graph.openManagement()
 mgmt.buildIndex('tripleMixCons2', Vertex.class).addKey(mgmt.getPropertyKey('city')).addKey(mgmt.getPropertyKey('code')).addKey(mgmt.getPropertyKey('desc')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
 mgmt.commit()
@@ -92,10 +78,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'tripleMixCons2').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("tripleMixCons2"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('C')).has('code', textContainsPrefix('C')).has('desc', textContainsPrefix('C')).values('desc','city','code')
-graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('Zz')).has('code', textContainsPrefix('Zz')).has('desc', textContainsPrefix('Zz')).values('desc','city','code') - 0.195249
 
-//9. mixed rango
+//9. runwaysMixed
 mgmt = graph.openManagement()
 mgmt.buildIndex('runwaysMixed', Vertex.class).addKey(mgmt.getPropertyKey('runways')).buildMixedIndex("search")
 mgmt.commit()
@@ -103,11 +87,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysMixed').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("runwaysMixed"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().has('runways', gt(5)).values('desc','runways')
-graph.traversal().V().has('runways', gt(1)).values('desc','runways') - 0.121214
-graph.traversal().V().has('runways', gt(10)).values('desc','runways') - 0.064097
 
-//10. mixed rango
+//10. cityElevConstrain
 mgmt = graph.openManagement()
 mgmt.buildIndex('cityElevConstrain', Vertex.class).addKey(mgmt.getPropertyKey('city')).addKey(mgmt.getPropertyKey('elev')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
 mgmt.commit()
@@ -115,10 +96,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'cityElevConstrain').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("cityElevConstrain"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[z,Z].*')).has('elev', inside(1000,2000)).values('desc','city','elev')
-graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[!].*')).has('elev', inside(1000,2000)).values('desc','city','elev') - 0.076398
 
-//11. mixed string 
+//11. cityString
 mgmt = graph.openManagement()
 mgmt.buildIndex('cityString', Vertex.class).addKey(mgmt.getPropertyKey('city'), Mapping.STRING.asParameter()).buildMixedIndex("search")
 mgmt.commit()
@@ -126,17 +105,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'cityString').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("cityString"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().has('city', textFuzzy('Buenoz Airez')).values('desc','city')
-graph.traversal().V().has('city', textFuzzy('zzz')).values('desc','city') - 0.038549
 
-//12.
-graph.traversal().V().has('elev', gte(100)).has('runways', inside(5,7)).has('longest', lt(14000)).values('code','elev','runways','longest')
-
-A pesar de no tener todos los indices que creeriamos necesarios para que la query funcione de forma optima, creemos que por el orden en que se hacen los filtros
-la solucion no itera por muchos nodos y eso hace que el warning de utilizar indices no aparezca
-Ademas, longest en nuestro graph es un String y se esta tratando como un integer sin hacer ningun tipo de conversion manual
-
-//13.
+//12. runwaysMixedConst
 graph.traversal().V().order().by('runways').limit(10).values('desc','runways')
 mgmt = graph.openManagement()
 mgmt.buildIndex('runwaysMixedConst', Vertex.class).addKey(mgmt.getPropertyKey('runways')).indexOnly(mgmt.getVertexLabel('airport')).buildMixedIndex("search")
@@ -145,12 +115,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'runwaysMixedConst2').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("runwaysMixedConst2"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().order().by('runways').limit(10).values('desc','runways')
 
-Para esta query no logramos optimizar de ninguna manera con indices, intentamos usar mixed, composite, y restringirlo para los aeropuertos, pero siempre necesita iterar por todos los nodos
-incluso sabiendo que tiene que mostrar unicamente los 10 primeros
-
-//14. mixed edge
+//13. distEdge2
 mgmt = graph.openManagement()
 mgmt.buildIndex('distEdge2', Edge.class).addKey(mgmt.getPropertyKey('dist')).buildMixedIndex("search")
 mgmt.commit()
@@ -158,14 +124,8 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'distEdge2').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("distEdge2"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().E().has('dist', lte(400)).order().by('dist', desc).values('dist')
-graph.traversal().E().has('dist', lte(0)).order().by('dist', desc).values('dist') - 0.06694
 
-//15.
-graph.traversal().V().not(bothE()).values('desc')
-No se nos ocurrio ningun tipo de indice que pueda optimizar esta query
-
-//16. mixed
+//14. cityComposite
 mgmt = graph.openManagement()
 mgmt.buildIndex('cityComposite', Vertex.class).addKey(mgmt.getPropertyKey('city')).buildCompositeIndex()
 mgmt.commit()
@@ -176,25 +136,104 @@ mgmt.commit()
 graph.traversal().V().has('city', 'New York').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc')
 g.traversal().V().has('city', 'zzz').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc') - 0.054817
 
-//17. geo
+//15. coordsIndex
 mgmt = graph.openManagement()
 coords = mgmt.makePropertyKey('coords').dataType(Geoshape.class).make()
 mgmt.buildIndex('coordsIndex', Vertex.class).addKey(coords, Mapping.PREFIX_TREE.asParameter()).buildMixedIndex("search")
 mgmt.commit()
 graph.traversal().V().local( __.as('x').map{ Geoshape.point(it.get().values('lat').next(), it.get().values('lon').next()) }.as('coords').select('x').property('coords', select('coords')) ).iterate()
 
-graph.traversal().V().has("coords", geoWithin(Geoshape.circle(-34.8222, -58.5358, 1))).valueMap(true) - 0.062895
-graph.traversal().V().has("coords", geoWithin(Geoshape.circle(-34.8222, -58.5358, 100))).valueMap(true) - 0.060472
-graph.traversal().V().has("coords", geoWithin(Geoshape.circle(-34.8222, -58.5358, 100000))).valueMap(true) - 0.032636
+== QUERIES ==
 
-graph.traversal().V().has("coords", geoDisjoint(Geoshape.circle(-34.8222, -58.5358, 1))).valueMap(true) - 0.115884
-graph.traversal().V().has("coords", geoDisjoint(Geoshape.circle(-34.8222, -58.5358, 100))).valueMap(true) - 0.11283
-graph.traversal().V().has("coords", geoDisjoint(Geoshape.circle(-34.8222, -58.5358, 100000))).valueMap(true) - 0.090667
+//1.
+graph.traversal().V().has('desc', 'Argentina').values('desc')
+graph.traversal().V().has('desc', 'Zambia').values('desc')
+graph.traversal().V().has('desc', 'Xer').values('desc')
 
-graph.traversal().V().has("coords", geoIntersect(Geoshape.circle(-34.8222, -58.5358, 1))).valueMap(true) - 0.070589
-graph.traversal().V().has("coords", geoIntersect(Geoshape.circle(-34.8222, -58.5358, 100))).valueMap(true) - 0.082274
-graph.traversal().V().has("coords", geoIntersect(Geoshape.circle(-34.8222, -58.5358, 100000))).valueMap(true) - 0.08997
+//2.
+graph.traversal().V().has('runways', 5).values('desc')
+graph.traversal().V().has('runways', 1).values('desc')
+graph.traversal().V().has('runways', 10).values('desc')
 
-graph.traversal().V().has("coords", geoContains(Geoshape.circle(-34.8222, -58.5358, 1))).valueMap(true) - 0.072174
-graph.traversal().V().has("coords", geoContains(Geoshape.circle(-34.8222, -58.5358, 100))).valueMap(true) - 0.059405
-graph.traversal().V().has("coords", geoContains(Geoshape.circle(-34.8222, -58.5358, 100000))).valueMap(true) - 0.047857
+//3.
+graph.traversal().V().hasLabel('country').has('desc', 'Argentina').values('desc')
+graph.traversal().V().has('desc', 'Argentina').hasLabel('country').values('desc')
+graph.traversal().V().hasLabel('country').has('desc', 'zzz').values('desc')
+graph.traversal().V().has('desc', 'zzz').hasLabel('country').values('desc')
+
+//4.
+graph.traversal().V().has('lat', '-34.8222').has('lon', '-58.5358').values('code', 'desc')
+graph.traversal().V().has('lat', '0').has('lon', '0').values('code', 'desc')
+
+//5.
+graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('continent').groupCount().by('desc').unfold()
+graph.traversal().V().hasLabel('airport').inE().otherV().hasLabel('country').groupCount().by('desc').unfold()
+
+//6.
+graph.traversal().V().hasLabel('airport').has('desc', containing('International')).order().by(bothE().hasLabel('route').count()).values('desc')
+graph.traversal().V().hasLabel('airport').has('desc', containing('a')).order().by(bothE().hasLabel('route').count()).values('desc')
+graph.traversal().V().hasLabel('airport').has('desc', containing('zzz')).order().by(bothE().hasLabel('route').count()).values('desc')
+
+//7.
+graph.traversal().V().has('desc', textContainsPrefix('Ar')).values('desc')
+graph.traversal().V().has('desc', textContainsPrefix(‘Bel’)).values('desc')
+
+//8.
+graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('C')).has('code', textContainsPrefix('C')).has('desc', textContainsPrefix('C')).values('desc','city','code')
+graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('R')).has('code', textContainsPrefix('G')).has('desc', textContainsPrefix('B')).values('desc','city','code')
+graph.traversal().V().hasLabel('airport').has('city', textContainsPrefix('R')).has('code', textContainsPrefix('B')).has('desc', textContainsPrefix('B')).values('desc','city','code')
+
+//9.
+graph.traversal().V().has('runways', gt(5)).values('desc','runways')
+graph.traversal().V().has('runways', gt(1)).values('desc','runways')
+graph.traversal().V().has('runways', gt(10)).values('desc','runways')
+
+//10.
+graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[z,Z].*')).has('elev', inside(1000,2000)).values('desc','city','elev')
+graph.traversal().V().has('city', textContainsRegex('.*[z,Z].*')).has('elev', inside(1000,2000)).hasLabel('airport').values('desc','city','elev')
+graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[!].*')).has('elev', inside(1000,2000)).values('desc','city','elev')
+graph.traversal().V().has('city', textContainsRegex('.*[!].*')).has('elev', inside(1000,2000)).hasLabel('airport').values('desc','city','elev')
+graph.traversal().V().hasLabel('airport').has('city', textContainsRegex('.*[g,G].*')).has('elev', inside(1000,2000)).values('desc','city','elev')
+
+//11.
+graph.traversal().V().has('city', textFuzzy('Buenoz Airez')).values('desc','city')
+graph.traversal().V().has('city', textFuzzy('landon')).values('desc','city')
+graph.traversal().V().has('city', textFuzzy('zzz')).values('desc','city')
+
+//12.
+graph.traversal().V().has('elev', gte(100)).has('runways', inside(5,7)).has('longest', lt(14000)).values('code','elev','runways','longest')
+graph.traversal().V().has('longest', lt(14000)).has('elev', gte(100)).has('runways', inside(5,7)).values('code','elev','runways','longest')
+graph.traversal().V().has('longest', lt(14000)).has('elev', gte(100)).has('runways', inside(1,7)).values('code','elev','runways','longest')
+
+//13.
+graph.traversal().V().order().by('runways').limit(10).values('desc','runways')
+
+//14.
+graph.traversal().E().has('dist', lte(400)).order().by('dist', desc).values('dist')
+graph.traversal().E().has('dist', lte(0)).order().by('dist', desc).values('dist')
+
+//15.
+graph.traversal().V().not(bothE()).values('desc')
+
+//16.
+graph.traversal().V().has('city', 'New York').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc')
+graph.traversal().V().has('city', 'zzz').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc')
+graph.traversal().V().has('city', 'Buenos Aires').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc')
+
+//17.
+graph.traversal().V().has("coords", geoWithin(Geoshape.circle(-34.8222, -58.5358, 1))).valueMap(true)
+graph.traversal().V().has("coords", geoWithin(Geoshape.circle(-34.8222, -58.5358, 100))).valueMap(true)
+graph.traversal().V().has("coords", geoWithin(Geoshape.circle(-34.8222, -58.5358, 100000))).valueMap(true)
+graph.traversal().V().has("coords", geoDisjoint(Geoshape.circle(-34.8222, -58.5358, 1))).valueMap(true)
+graph.traversal().V().has("coords", geoDisjoint(Geoshape.circle(-34.8222, -58.5358, 100))).valueMap(true)
+graph.traversal().V().has("coords", geoDisjoint(Geoshape.circle(-34.8222, -58.5358, 100000))).valueMap(true)
+graph.traversal().V().has("coords", geoIntersect(Geoshape.circle(-34.8222, -58.5358, 1))).valueMap(true)
+graph.traversal().V().has("coords", geoIntersect(Geoshape.circle(-34.8222, -58.5358, 100))).valueMap(true)
+graph.traversal().V().has("coords", geoIntersect(Geoshape.circle(-34.8222, -58.5358, 100000))).valueMap(true)
+graph.traversal().V().has("coords", geoContains(Geoshape.circle(-34.8222, -58.5358, 1))).valueMap(true)
+graph.traversal().V().has("coords", geoContains(Geoshape.circle(-34.8222, -58.5358, 100))).valueMap(true)
+graph.traversal().V().has("coords", geoContains(Geoshape.circle(-34.8222, -58.5358, 100000))).valueMap(true)
+
+//18.
+graph.traversal().V().or(has('city', textFuzzy('Landon')), has('desc', textContainsPrefix('London'))).values('city','desc')
+graph.traversal().V().or(has('desc', textContainsPrefix('London')), has('city', textFuzzy('Landon'))).values('city','desc')
