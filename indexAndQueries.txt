@@ -133,8 +133,6 @@ ManagementSystem.awaitGraphIndexStatus(graph, 'cityComposite').call()
 mgmt = graph.openManagement()
 mgmt.updateIndex(mgmt.getGraphIndex("cityComposite"), SchemaAction.REINDEX).get()
 mgmt.commit()
-graph.traversal().V().has('city', 'New York').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc')
-graph.traversal().V().has('city', 'zzz').out().has('city', within('London', 'Paris', 'Amsterdam', 'Berlin')).path().by('desc') - 0.054817
 
 //15. coordsIndex
 mgmt = graph.openManagement()
